@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Juego de la Oca - Interactivo</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;display:flex;gap:20px;padding:20px}
+  #wrap{position:relative;width:700px}
+  #board{width:100%;display:block}
+  .token{position:absolute;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold}
+  #controls{max-width:240px}
+  button{display:block;margin:8px 0;padding:10px 12px;font-size:16px}
+  #msg{min-height:60px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div id="wrap">
+    <!-- Sustituye 'tablero.png' por la URL de tu tablero -->
+    <img id="board" src="https://i.imgur.com/6Q6bYfK.png" alt="Tablero" />
+    <!-- Token de ejemplo -->
+    <div id="token" class="token" style="background:#e74c3c; left:10px; top:520px">1</div>
+  </div>
+
+  <div id="controls">
+    <h3>Juego de la Oca</h3>
+    <div>Jugador: <strong id="playerName">1</strong></div>
+    <button id="rollBtn">Tirar dado 🎲</button>
+    <div id="diceResult">—</div>
+    <div id="msg"></div>
+    <button id="resetBtn">Reiniciar</button>
+    <p style="font-size:12px;color:#666">Nota: cambia la variable positions para adecuar las coordenadas del tablero.</p>
+  </div>
+
+<script>
+/* --- CONFIGURACIÓN: COORDENADAS DE CADA CASILLA --- 
+   positions[i] = {x: px_from_left, y: px_from_top}
+   - Debes ajustar estas coordenadas según la imagen de tu tablero.
+   - En este ejemplo hay 20 posiciones; amplía a 63 si quieres.
+*/
+const positions = [
+  {x:10,y:520}, // 0 salida (opcional)
+  {x:10,y:480}, //1
+  {x:80,y:480}, //2
+  {x:150,y:480},//3
+  {x:220,y:480},//4
+  {x:290,y:480},//5
+  {x:360,y:480},//6
+  {x:430,y:480},//7
+  {x:500,y:480},//8
+  {x:560,y:480},//9
+  {x:560,y:420},//10
+  {x:500,y:420},//11
+  {x:430,y:420},//12
+  {x:360,y:420},//13
+  {x:290,y:420},//14
+  {x:220,y:420},//15
+  {x:150,y:420},//16
+  {x:80,y:420}, //17
+  {x:10,y:420}, //18
+  {x:10,y:360}  //19 - meta de ejemplo
+];
+
+const special = {
+  // ejemplo: casilla 6 (oca) lleva a 12
+  6: {type:'go', to:12},
+  // añade más reglas: puente, cárcel, retrocede, avanza...
+  10: {type:'back', to:4},
+  12: {type:'go', to:18}
+};
+
+let pos = 1;
+let player = 1;
+const maxPos = positions.length - 1;
+
+const token = document.getElementById('token');
+const rollBtn = document.getElementById('rollBtn');
+const diceResult = document.getElementById('diceResult');
+const msg = document.getElementById('msg');
+const playerName = document.getElementById('playerName');
+
+function moveTokenTo(index, animate = true){
+  if(index < 0) index = 0;
+  if(index > maxPos) index = maxPos;
+  const p = positions[index];
+  token.style.transition = animate ? 'left 0.5s, top 0.5s' : 'none';
+  token.style.left = p.x + 'px';
+  token.style.top = p.y + 'px';
+  token.textContent = index;
+  pos = index;
+}
+
+function rollDice(){
+  return Math.floor(Math.random()*6) + 1;
+}
+
+function applySpecial(){
+  if(special[pos]){
+    const rule = special[pos];
+    if(rule.type === 'go'){
+      msg.innerHTML = `¡Oca! Avanzas a la casilla ${rule.to}.`;
+      moveTokenTo(rule.to);
+    } else if(rule.type === 'back'){
+      msg.innerHTML = `Oh: vuelves a la casilla ${rule.to}.`;
+      moveTokenTo(rule.to);
+    }
+  } else {
+    msg.innerHTML = '';
+  }
+}
+
+rollBtn.addEventListener('click', ()=>{
+  const d = rollDice();
+  diceResult.textContent = `Dado: ${d}`;
+  let target = pos + d;
+  if(target > maxPos) target = maxPos; // o regla de rebote
+  // animación paso a paso: mueve por cada casilla con retraso
+  let step = pos;
+  rollBtn.disabled = true;
+  const interval = setInterval(()=>{
+    step++;
+    moveTokenTo(step);
+    if(step >= target){
+      clearInterval(interval);
+      // aplicar casillas especiales
+      applySpecial();
+      rollBtn.disabled = false;
+      // cambiar turno si quieres (aquí simple: cambia jugador)
+      player = (player === 1) ? 2 : 1;
+      playerName.textContent = player;
+    }
+  }, 350);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  pos = 1;
+  player = 1;
+  playerName.textContent = player;
+  moveTokenTo(pos,false);
+  diceResult.textContent = '—';
+  msg.innerHTML = '';
+});
+
+// posición inicial
+moveTokenTo(pos,false);
+</script>
+</body>
+</html>
